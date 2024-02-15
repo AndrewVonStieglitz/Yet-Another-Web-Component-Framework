@@ -1,11 +1,10 @@
 {
-  "name": "web-component",
+  "name": "yet-another-web-component-framework",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsc && node dist/index.js"
   },
   "keywords": [],
