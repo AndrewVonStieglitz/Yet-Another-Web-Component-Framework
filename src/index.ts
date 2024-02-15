@@ -3,7 +3,7 @@ import { readFile, watch, existsSync } from "fs";
 import { join, resolve } from "path";
 import { WebSocketServer } from "ws";
 
-const srcDir = "./src";
+const srcDir = "./client";
 const defaultFile = "index.html";
 const hmrScriptTag = /*html*/ `
 <script>
@@ -18,9 +18,14 @@ const hmrScriptTag = /*html*/ `
 
 const server = createServer((req, res) => {
   // Prevent directory traversal vulnerability
-  let normalizedUrl = req.url.endsWith("/")
-    ? `${req.url}${defaultFile}`
-    : req.url;
+  let normalizedUrl: string;
+  if (req.url) {
+    normalizedUrl = req.url.endsWith("/")
+      ? `${req.url}${defaultFile}`
+      : req.url;
+  } else {
+    normalizedUrl = `/${defaultFile}`;
+  }
   normalizedUrl = normalizedUrl === "/" ? `/${defaultFile}` : normalizedUrl; // Handle root URL
 
   const safePath = join(srcDir, normalizedUrl);
@@ -41,11 +46,13 @@ const server = createServer((req, res) => {
         res.end(JSON.stringify(err));
         return;
       }
-      let content = data;
+      let content: Buffer = data; // Convert content to Buffer
       const contentType = getContentType(fullPath);
       // If the file is an HTML file, append the HMR script tag before the closing body tag
       if (contentType === "text/html") {
-        content = data.toString().replace("</body>", `${hmrScriptTag}</body>`);
+        content = Buffer.from(
+          data.toString().replace("</body>", `${hmrScriptTag}</body>`)
+        ); // Convert content to Buffer
       }
       res.writeHead(200, { "Content-Type": contentType });
       res.end(content);
