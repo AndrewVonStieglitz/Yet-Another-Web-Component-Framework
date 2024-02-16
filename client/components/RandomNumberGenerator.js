@@ -1,14 +1,24 @@
+//@ts-check
 class RandomNumberGenerator extends HTMLElement {
+    number = 0;
+
     constructor() {
         super();
-        this.number = 0; 
-        this.attachShadow({ mode: 'open' }); 
-        this.shadowRoot.innerHTML = `
-            <button id="generate-btn">0</button>
-        `;
-        
-        // Add event listener to the button
-        this.shadowRoot.querySelector('#generate-btn').addEventListener('click', () => {
+        this.attachShadow({ mode: 'open' });
+
+        if (!this.shadowRoot) {
+            throw new Error('Shadow root not found');
+        }
+
+        this.shadowRoot.innerHTML = `<button id="generate-btn">0</button>`;
+
+        const generateBtn = this.shadowRoot.querySelector('#generate-btn');
+
+        if (!generateBtn) {
+            throw new Error('Button element not found');
+        }
+
+        generateBtn.addEventListener('click', () => {
             this.getRandomNumber();
         });
     }
@@ -18,11 +28,19 @@ class RandomNumberGenerator extends HTMLElement {
             .then(response => response.json())
             .then(data => {
                 this.number = data.number;
-                this.shadowRoot.querySelector('#generate-btn').innerText = `${this.number}`;
+    
+                if (!this.shadowRoot) {
+                    throw new Error('Shadow root not found during fetch');
+                }
+    
+                const generateBtn = this.shadowRoot.querySelector('#generate-btn');
+                if (!(generateBtn instanceof HTMLElement)) {
+                    throw new Error('Button element not found during fetch');
+                }
+                generateBtn.innerText = `${this.number}`;
             })
             .catch(error => console.error('Error:', error));
     }
 }
 
-// Define the custom element
 customElements.define('random-number-generator', RandomNumberGenerator);
