@@ -20,11 +20,10 @@ const server = createServer((req, res) => {
 
   if (req.url === "/random-number") {
     const randomNumber = Math.floor(Math.random() * 10) + 1; // Generates a number between 1 and 10
-    res.writeHead(200, { "Content-Type": "text/html" });
-    res.end(`<button hx-get="/random-number" hx-trigger="click" hx-target="this" hx-swap="outerHTML">Random Number: ${randomNumber}</button>`);
-    return; 
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ number: randomNumber }));
+    return; // Prevent further processing
   }
-  
   
   let normalizedUrl;
   if (req.url) {

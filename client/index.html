@@ -1,16 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  </head>
-  <body>
-    <p>hello adssad</p>
-    <button hx-get="/random-number" hx-trigger="click" hx-target="this" hx-swap="outerHTML">
-      Get Random Number
-  </button>
+<head>
+    <meta charset="UTF-8">
+    <title>Random Number Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.0/dist/alpine.min.js" defer></script>
+</head>
+<body>
+    <!-- Alpine.js component -->
+    <div x-data="randomNumberGenerator()">
+        <button @click="getRandomNumber">Get Random Number</button>
+    </div>
 
-  </body>
+    <script>
+    function randomNumberGenerator() {
+        return {
+            number: '',
+
+            getRandomNumber() {
+                axios.get('/random-number')
+                    .then(response => {
+                        this.number = response.data.number;
+                        this.$el.querySelector('button').innerText = `Random Number: ${this.number}`;
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        }
+    }
+    </script>
+</body>
 </html>
