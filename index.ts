@@ -17,8 +17,7 @@ const hmrScriptTag = /*html*/ `
 `;
 
 const server = createServer((req, res) => {
-  // Prevent directory traversal vulnerability
-  let normalizedUrl: string;
+  let normalizedUrl;
   if (req.url) {
     normalizedUrl = req.url.endsWith("/")
       ? `${req.url}${defaultFile}`
@@ -26,42 +25,58 @@ const server = createServer((req, res) => {
   } else {
     normalizedUrl = `/${defaultFile}`;
   }
-  normalizedUrl = normalizedUrl === "/" ? `/${defaultFile}` : normalizedUrl; // Handle root URL
+  normalizedUrl = normalizedUrl === "/" ? `/${defaultFile}` : normalizedUrl;
 
-  const safePath = join(srcDir, normalizedUrl);
-  const fullPath = resolve(safePath);
+  let safePath = join(srcDir, normalizedUrl);
+  let fullPath = resolve(safePath);
 
-  // Verify that the resolved path starts with the absolute path to the src directory
+  // Function to serve file
+  const serveFile = (path) => {
+    readFile(path, (err, data) => {
+      if (err) {
+        res.writeHead(404);
+        res.end(JSON.stringify(err));
+        return;
+      }
+      let content = data;
+      const contentType = getContentType(path);
+      if (contentType === "text/html") {
+        content = Buffer.from(
+          data.toString().replace("</body>", `${hmrScriptTag}</body>`)
+        );
+      }
+      res.writeHead(200, { "Content-Type": contentType });
+      res.end(content);
+    });
+  };
+
+  // Check if the path is a directory or has no extension (i.e., potentially an HTML file)
+  if (!fullPath.startsWith(resolve(srcDir)) || !existsSync(fullPath)) {
+    // Attempt to serve .html if no extension is provided
+    if (!fullPath.includes('.')) {
+      safePath += '.html';
+      fullPath = resolve(safePath);
+      if (existsSync(fullPath) && fullPath.startsWith(resolve(srcDir))) {
+        serveFile(fullPath);
+        return;
+      }
+    }
+
+    res.writeHead(404);
+    res.end("Not Found");
+    return;
+  }
+
+  // Verify the path starts with the src directory path
   if (!fullPath.startsWith(resolve(srcDir))) {
     res.writeHead(403);
     res.end("Access Denied");
     return;
   }
 
-  // Serve the file if it exists
-  if (existsSync(fullPath)) {
-    readFile(fullPath, (err, data) => {
-      if (err) {
-        res.writeHead(404);
-        res.end(JSON.stringify(err));
-        return;
-      }
-      let content: Buffer = data; // Convert content to Buffer
-      const contentType = getContentType(fullPath);
-      // If the file is an HTML file, append the HMR script tag before the closing body tag
-      if (contentType === "text/html") {
-        content = Buffer.from(
-          data.toString().replace("</body>", `${hmrScriptTag}</body>`)
-        ); // Convert content to Buffer
-      }
-      res.writeHead(200, { "Content-Type": contentType });
-      res.end(content);
-    });
-  } else {
-    res.writeHead(404);
-    res.end("Not Found");
-  }
+  serveFile(fullPath);
 });
+
 
 const getContentType = (filePath) => {
   const extension = filePath.split(".").pop();
