@@ -1,5 +1,5 @@
 import { createServer } from "http";
-import { readFile, watch, existsSync } from "fs";
+import { readFile, watch, existsSync, PathOrFileDescriptor } from "fs";
 import { join, resolve } from "path";
 import { WebSocketServer } from "ws";
 
@@ -17,6 +17,15 @@ const hmrScriptTag = /*html*/ `
 `;
 
 const server = createServer((req, res) => {
+
+  if (req.url === "/random-number") {
+    const randomNumber = Math.floor(Math.random() * 10) + 1; // Generates a number between 1 and 10
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(`<button hx-get="/random-number" hx-trigger="click" hx-target="this" hx-swap="outerHTML">Random Number: ${randomNumber}</button>`);
+    return; 
+  }
+  
+  
   let normalizedUrl;
   if (req.url) {
     normalizedUrl = req.url.endsWith("/")
@@ -30,8 +39,7 @@ const server = createServer((req, res) => {
   let safePath = join(srcDir, normalizedUrl);
   let fullPath = resolve(safePath);
 
-  // Function to serve file
-  const serveFile = (path) => {
+  const serveFile = (path: PathOrFileDescriptor) => {
     readFile(path, (err, data) => {
       if (err) {
         res.writeHead(404);
@@ -50,9 +58,7 @@ const server = createServer((req, res) => {
     });
   };
 
-  // Check if the path is a directory or has no extension (i.e., potentially an HTML file)
   if (!fullPath.startsWith(resolve(srcDir)) || !existsSync(fullPath)) {
-    // Attempt to serve .html if no extension is provided
     if (!fullPath.includes('.')) {
       safePath += '.html';
       fullPath = resolve(safePath);
@@ -88,7 +94,6 @@ const getContentType = (filePath) => {
     png: "image/png",
     jpg: "image/jpeg",
     svg: "image/svg+xml",
-    // Add more MIME types as needed
   };
   return contentTypes[extension] || "application/octet-stream";
 };
@@ -101,14 +106,12 @@ server.on("upgrade", (request, socket, head) => {
   });
 });
 
-// Notify clients to reload when any file in the src directory changes
 const notifyClientsToReload = () => {
   wss.clients.forEach((client) => {
     client.send("reload");
   });
 };
 
-// Watch the src directory for changes
 watch(srcDir, { recursive: true }, (eventType, filename) => {
   if (filename) {
     notifyClientsToReload();
