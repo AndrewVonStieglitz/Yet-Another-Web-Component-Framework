@@ -22,10 +22,10 @@ const server = createServer((req, res) => {
     const randomNumber = Math.floor(Math.random() * 10) + 1; // Generates a number between 1 and 10
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ number: randomNumber }));
-    return; // Prevent further processing
+    return; 
   }
   
-  let normalizedUrl;
+  let normalizedUrl: string;
   if (req.url) {
     normalizedUrl = req.url.endsWith("/")
       ? `${req.url}${defaultFile}`
@@ -72,7 +72,6 @@ const server = createServer((req, res) => {
     return;
   }
 
-  // Verify the path starts with the src directory path
   if (!fullPath.startsWith(resolve(srcDir))) {
     res.writeHead(403);
     res.end("Access Denied");
@@ -82,9 +81,8 @@ const server = createServer((req, res) => {
   serveFile(fullPath);
 });
 
-
-const getContentType = (filePath) => {
-  const extension = filePath.split(".").pop();
+const getContentType = (filePath: PathOrFileDescriptor) => {
+  const extension = typeof filePath === 'string' ? filePath.split(".").pop() : '';
   const contentTypes = {
     html: "text/html",
     js: "application/javascript",
@@ -94,7 +92,7 @@ const getContentType = (filePath) => {
     jpg: "image/jpeg",
     svg: "image/svg+xml",
   };
-  return contentTypes[extension] || "application/octet-stream";
+  return contentTypes[extension as keyof typeof contentTypes] || "application/octet-stream";
 };
 
 const wss = new WebSocketServer({ noServer: true });

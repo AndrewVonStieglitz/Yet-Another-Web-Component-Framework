@@ -7,13 +7,6 @@ class IncrementButton extends HTMLElement {
     this.count = 0;
     // Setup the initial HTML structure and styles
     this.shadowRoot.innerHTML = `
-        <style>
-          button {
-            padding: 10px;
-            font-size: 16px;
-            margin: 5px;
-          }
-        </style>
         <button id="increment-btn">Click me</button>
         <span id="count-display">0</span>
       `;
